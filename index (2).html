@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProjectFlow — ユーザーストーリーマップ</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Hiragino Sans', 'Meiryo', 'Segoe UI', Arial, sans-serif;
+    background: #f5f4f0;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+
+  header {
+    background: #fff;
+    border-bottom: 2px solid #1a1a1a;
+    padding: 18px 28px 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    flex-wrap: wrap;
+  }
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  header span { font-size: 12px; color: #666; font-weight: 400; }
+
+  .legend {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    margin-left: auto;
+    flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #444; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+  .map-wrapper { overflow-x: auto; padding: 24px 28px 40px; }
+
+  .map-table { border-collapse: separate; border-spacing: 0; min-width: max-content; }
+
+  .row-label-cell { vertical-align: top; padding: 0 14px 0 0; min-width: 130px; width: 130px; }
+  .row-label {
+    background: #1a1a1a; color: #fff; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.07em;
+    padding: 6px 10px; border-radius: 4px; margin-bottom: 4px; display: inline-block;
+  }
+  .row-sublabel { font-size: 10px; color: #888; line-height: 1.4; padding: 0 2px; max-width: 120px; }
+
+  .activity-row td { padding-bottom: 10px; vertical-align: top; }
+  .activity-card {
+    border: 1.5px solid #2E75B6; border-radius: 4px; padding: 10px 12px;
+    min-width: 120px; max-width: 160px; font-size: 12px; font-weight: 700;
+    text-align: center; line-height: 1.4; cursor: default;
+    box-shadow: 2px 3px 0 rgba(0,0,0,0.12); position: relative;
+  }
+  .activity-card:after {
+    content: ''; position: absolute; bottom: -10px; left: 50%;
+    transform: translateX(-50%); width: 1px; height: 10px; background: #bbb;
+  }
+
+  .step-row td { padding-bottom: 8px; vertical-align: top; }
+  .step-card {
+    background: #7EC893; border: 1.5px solid #3B7A52; border-radius: 4px;
+    padding: 8px 10px; min-width: 110px; max-width: 150px;
+    font-size: 11px; font-weight: 600; text-align: center;
+    line-height: 1.4; cursor: default; box-shadow: 2px 3px 0 rgba(0,0,0,0.10); margin-bottom: 4px;
+  }
+
+  .detail-row td { vertical-align: top; padding-bottom: 0; }
+  .detail-cell { vertical-align: top; padding: 0 8px 8px 0; }
+
+  .story-note {
+    background: #FEF08A; border: 1px solid #D4B800; border-radius: 3px;
+    padding: 7px 9px; min-width: 110px; max-width: 150px;
+    font-size: 10px; line-height: 1.45; cursor: pointer;
+    box-shadow: 2px 3px 0 rgba(0,0,0,0.10); margin-bottom: 6px;
+    transition: transform 0.1s, box-shadow 0.1s; position: relative;
+  }
+  .story-note:hover { transform: translateY(-2px) rotate(-0.5deg); box-shadow: 3px 5px 0 rgba(0,0,0,0.15); z-index: 2; }
+  .story-note.high   { background: #FECACA; border-color: #EF4444; }
+  .story-note.medium { background: #FEF08A; border-color: #D4B800; }
+  .story-note.low    { background: #D9F99D; border-color: #65A30D; }
+
+  .story-id { font-size: 9px; color: #777; margin-bottom: 3px; font-weight: 600; }
+  .story-title { font-weight: 700; font-size: 10px; color: #111; margin-bottom: 4px; }
+  .story-sp {
+    font-size: 9px; background: rgba(0,0,0,0.08); border-radius: 20px;
+    padding: 1px 5px; display: inline-block; color: #444;
+  }
+
+  .divider-row td { padding: 0; }
+  .divider-line { border-top: 2px dashed #ccc; margin: 6px 0 10px; }
+
+  .epic-header-row td { padding-bottom: 12px; vertical-align: bottom; }
+  .epic-header {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: #fff; padding: 5px 12px;
+    border-radius: 3px 3px 0 0; text-align: center; white-space: nowrap;
+  }
+
+  /* Modal */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center; z-index: 200; display: none;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: #fff; border-radius: 8px; border: 1.5px solid #1a1a1a;
+    padding: 24px 28px; max-width: 520px; width: 92%;
+    max-height: 85vh; overflow-y: auto; position: relative;
+  }
+  .modal-close {
+    position: absolute; top: 14px; right: 16px;
+    background: none; border: none; font-size: 22px; cursor: pointer; color: #666; line-height: 1;
+  }
+  .modal-epic { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #888; margin-bottom: 4px; }
+  .modal-id { font-size: 11px; color: #aaa; margin-bottom: 6px; }
+  .modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+  .modal-badges { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+  .badge { font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 600; }
+  .badge.high   { background: #FECACA; color: #991B1B; }
+  .badge.medium { background: #FEF08A; color: #78350F; }
+  .badge.low    { background: #D9F99D; color: #3F6212; }
+  .badge.sp     { background: #f0f0f0; color: #444; }
+  .modal-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #aaa; margin: 14px 0 6px; }
+  .modal-story {
+    font-size: 13px; font-style: italic; color: #444; line-height: 1.65;
+    background: #f9f9f6; padding: 10px 14px; border-radius: 6px; border-left: 3px solid #1a1a1a;
+  }
+  .ac-list { list-style: none; padding: 0; }
+  .ac-list li { font-size: 12px; color: #222; padding: 5px 0; border-bottom: 1px solid #f0f0f0; line-height: 1.5; }
+  .ac-list li:before { content: "✓ "; color: #22c55e; font-weight: 700; }
+  .modal-notes {
+    font-size: 12px; color: #555; background: #fafaf7; padding: 10px 12px;
+    border-radius: 6px; border: 1px solid #e8e8e0; line-height: 1.6;
+  }
+
+  /* Inline editable cards */
+  .editable-card { cursor: pointer; position: relative; }
+  .editable-card:hover { outline: 2px dashed rgba(0,0,0,0.25); }
+  .edit-hint { font-size: 10px; opacity: 0; margin-left: 5px; transition: opacity 0.15s; }
+  .editable-card:hover .edit-hint { opacity: 0.5; }
+  .inline-edit-input {
+    font-family: inherit; font-size: inherit; font-weight: inherit;
+    text-align: center; border: none; outline: none;
+    background: rgba(255,255,255,0.7); border-radius: 3px;
+    width: 100%; box-sizing: border-box; padding: 2px 4px;
+  }
+
+  /* Edit form */
+  .field-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.07em; color: #aaa; margin: 14px 0 6px;
+  }
+  .field-input, .field-select, .field-textarea {
+    width: 100%; font-family: inherit; font-size: 13px; padding: 7px 9px;
+    border: 1.5px solid #ddd; border-radius: 5px; background: #fafaf8; color: #1a1a1a;
+  }
+  .field-textarea { resize: vertical; min-height: 50px; line-height: 1.5; }
+  .field-row { display: flex; gap: 10px; }
+  .field-row > div { flex: 1; }
+  .ac-edit-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+  .ac-edit-row input { flex: 1; }
+  .ac-remove-btn, .ac-add-btn {
+    background: none; border: 1px solid #ddd; border-radius: 4px;
+    cursor: pointer; font-size: 13px; color: #888; padding: 4px 8px;
+  }
+  .modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+  .btn-primary {
+    background: #1a1a1a; color: #fff; border: none; border-radius: 5px;
+    padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .btn-secondary {
+    background: #fff; color: #444; border: 1.5px solid #ddd; border-radius: 5px;
+    padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .btn-danger {
+    background: #fff; color: #a33; border: 1.5px solid #f0c0c0; border-radius: 5px;
+    padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
+    margin-left: auto;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ProjectFlow — ユーザーストーリーマップ</h1>
+  <span id="story-count">63ストーリー · 11エピック</span>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#7CB9E8;border:1px solid #2E75B6"></div> アクティビティ</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#7EC893;border:1px solid #3B7A52"></div> ステップ</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#FECACA;border:1px solid #EF4444"></div> 優先度：高</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#FEF08A;border:1px solid #D4B800"></div> 中</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#D9F99D;border:1px solid #65A30D"></div> 低</div>
+    <div class="legend-item" style="font-size:11px;color:#888;">ストーリーをクリックで詳細を表示/編集</div>
+  </div>
+  <button id="add-story-btn" onclick="openAddModal()" style="margin-left:14px;background:#1a1a1a;color:#fff;border:none;border-radius:4px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;">＋ ストーリーを追加</button>
+  <button id="reset-btn" onclick="resetData()" style="margin-left:8px;background:#fff;color:#a33;border:1px solid #a33;border-radius:4px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;">元データにリセット</button>
+</header>
+
+<div class="map-wrapper">
+<table class="map-table" id="map"></table>
+</div>
+
+<div class="modal-bg" id="modal" onclick="closeModal(event)">
+  <div class="modal" id="modal-inner">
+    <button class="modal-close" onclick="closeModal()">×</button>
+  </div>
+</div>
+
+<script>
+const STORIES_SEED = [
+  {id:"US-001",epic:"認証",activity:"アカウントアクセス",step:"新規登録",title:"メールで新規登録",story:"新規ユーザーとして、メールアドレスとパスワードでアカウントを作成したい。",priority:"High",sp:3,ac:["メール形式をリアルタイムで検証する","パスワードは8文字以上・数字1文字以上必須","登録成功後に確認メールを送信する","重複メールには明確なエラーを表示する","登録後はオンボーディングへリダイレクトする"],notes:"フェーズ2でGoogle/GitHubによるソーシャル登録を検討。"},
+  {id:"US-002",epic:"認証",activity:"アカウントアクセス",step:"ログイン",title:"ログイン",story:"既存ユーザーとして、認証情報でログインしてプロジェクトにアクセスしたい。",priority:"High",sp:2,ac:["無効な認証情報には汎用エラーを表示する","「ログイン状態を保持」でセッションを30日間維持する","ログイン後は最後に開いたプロジェクトへ遷移する","5回失敗でアカウントをロックする"],notes:"ロック時間：15分、自動解除。"},
+  {id:"US-003",epic:"認証",activity:"アカウントアクセス",step:"ログイン",title:"パスワードリセット",story:"パスワードを忘れたユーザーとして、メールでリセットしてアクセスを回復したい。",priority:"High",sp:2,ac:["リセットリンクは1時間で失効する","有効なリセットリンクは同時に1つのみ","メール存在有無に関わらず成功画面を表示する","直近3回と同じパスワードは設定不可"],notes:""},
+  {id:"US-004",epic:"認証",activity:"アカウントアクセス",step:"セキュリティ設定",title:"MFA（二要素認証）の有効化",story:"セキュリティ意識の高いユーザーとして、二要素認証を有効にしてアカウントを保護したい。",priority:"Medium",sp:3,ac:["TOTPアプリ（Google Authenticator、Authy）に対応","設定時にQRコードと手動入力キーを表示する","バックアップコードを生成・ダウンロード可能","パスワード確認後にMFAを無効化できる"],notes:"フェーズ2でSMSによるMFAを追加。"},
+  {id:"US-005",epic:"認証",activity:"アカウントアクセス",step:"セキュリティ設定",title:"SSOログイン",story:"エンタープライズユーザーとして、会社のSSOでログインして別途の認証情報管理を不要にしたい。",priority:"Medium",sp:5,ac:["SAML 2.0およびOAuth 2.0/OIDCに対応","ドメインベースのSSO自動ルーティング","初回SSOログイン時にアカウントを自動作成する","管理者がワークスペース全体にSSO必須を強制できる"],notes:"フェーズ2の機能。"},
+  {id:"US-006",epic:"認証",activity:"アカウントアクセス",step:"ログイン",title:"ログアウト",story:"ユーザーとして、ログアウトしてセッションを安全に終了したい。",priority:"High",sp:1,ac:["サーバー側でセッショントークンを無効化する","ログインページへリダイレクトする","全タブで同時にログアウトされる"],notes:""},
+
+  {id:"US-007",epic:"ワークスペース＆設定",activity:"ワークスペースのセットアップ",step:"ワークスペース作成",title:"ワークスペースを作成する",story:"管理者として、ワークスペースを作成してチームの共有環境を整えたい。",priority:"High",sp:3,ac:["ワークスペース名とスラッグは必須","スラッグは一意かつURLセーフである必要がある","作成者に自動で管理者ロールを付与する","デフォルトプロジェクトを任意で作成可能"],notes:""},
+  {id:"US-008",epic:"ワークスペース＆設定",activity:"ワークスペースのセットアップ",step:"メンバー招待",title:"チームメンバーを招待する",story:"管理者として、メールでユーザーを招待してワークスペースに参加させたい。",priority:"High",sp:3,ac:["一度に最大20件のメールアドレスを招待可能","招待時にロールを選択する","招待リンクは7日間で失効する","招待の再送・取り消しオプションあり"],notes:""},
+  {id:"US-009",epic:"ワークスペース＆設定",activity:"ワークスペースのセットアップ",step:"メンバー招待",title:"ユーザーロールを管理する",story:"管理者として、ロールを割り当て・変更して各メンバーに適切な権限を付与したい。",priority:"High",sp:3,ac:["ロール：管理者・PM・開発者・オブザーバー","最後の管理者は削除不可","ロール変更は即時反映される","ロール変更は監査ログに記録される"],notes:""},
+  {id:"US-010",epic:"ワークスペース＆設定",activity:"ワークスペースのセットアップ",step:"デフォルト設定",title:"ワークスペース設定を構成する",story:"管理者として、ワークスペース全体の設定を行いデフォルト値をチームのプロセスに合わせたい。",priority:"Medium",sp:2,ac:["デフォルトタイムゾーンを設定する","デフォルト見積もりモードを設定する","キャパシティ計算用の1日の作業時間を設定する","スプリント長のデフォルトを設定する（1〜4週間）"],notes:""},
+  {id:"US-011",epic:"ワークスペース＆設定",activity:"ワークスペースのセットアップ",step:"デフォルト設定",title:"プロフィールを管理する",story:"ユーザーとして、名前・アバター・タイムゾーンを更新してプロフィールを正確に保ちたい。",priority:"Medium",sp:2,ac:["アバター画像のアップロード（JPG/PNG・最大2MB）","名前と表示名を編集可能","タイムゾーンはアプリ全体の日時表示に反映される","変更はチームに即時表示される"],notes:""},
+
+  {id:"US-012",epic:"プロジェクト管理",activity:"プロジェクト管理",step:"プロジェクト作成",title:"プロジェクトを作成する",story:"プロジェクトマネージャーとして、プロジェクトを作成して作業を整理したい。",priority:"High",sp:3,ac:["プロジェクト名・キー（3〜5文字）・説明は必須","プロジェクトキーは名前から自動提案・編集可能","イシュータイプをプロジェクトごとに設定可能","公開設定：プライベートまたはワークスペース全体"],notes:""},
+  {id:"US-013",epic:"プロジェクト管理",activity:"プロジェクト管理",step:"プロジェクト作成",title:"プロジェクトをアーカイブする",story:"管理者として、プロジェクトをアーカイブして読み取り専用で保持したい。",priority:"Medium",sp:2,ac:["アーカイブ済みプロジェクトはデフォルトでナビゲーションから非表示","アーカイブ状態でも全データを検索可能","アーカイブ中はイシューの作成・編集不可","管理者はアーカイブ解除が可能"],notes:""},
+  {id:"US-014",epic:"プロジェクト管理",activity:"プロジェクト管理",step:"プロジェクト設定",title:"プロジェクト設定を構成する",story:"プロジェクトマネージャーとして、プロジェクト固有の設定を行いチームのワークフローに合わせたい。",priority:"Medium",sp:3,ac:["プロジェクトごとにカスタムステータスワークフローを設定","見積もりモードを選択（SP / 時間 / 両方）","Tシャツサイズの時間換算を設定可能","新規イシューのデフォルト担当者を設定する"],notes:""},
+  {id:"US-015",epic:"プロジェクト管理",activity:"プロジェクト管理",step:"プロジェクト切替",title:"プロジェクトを切り替える",story:"ユーザーとして、プロジェクトをすばやく切り替えて効率よく作業コンテキストを移動したい。",priority:"High",sp:2,ac:["左サイドバーにプロジェクト切替ツールを配置","最近アクセスしたプロジェクトを先頭表示","キーボードショートカットで切替ツールを開く","お気に入りのプロジェクトを最上部にピン留めする"],notes:""},
+
+  {id:"US-016",epic:"イシュー管理",activity:"作業の追跡",step:"イシュー作成",title:"イシューを作成する",story:"チームメンバーとして、イシューを作成して作業を記録したい。",priority:"High",sp:3,ac:["必須：タイトル。任意：説明・担当者・優先度・ラベル・添付","イシュータイプを選択可能（エピック/ストーリー/タスク/バグ/サブタスク）","イシューには一意のIDが自動採番される（例：PF-42）","作成後すぐにバックログに表示される"],notes:""},
+  {id:"US-017",epic:"イシュー管理",activity:"作業の追跡",step:"イシュー管理",title:"イシューを編集する",story:"チームメンバーとして、イシューの詳細を編集して情報を最新の状態に保ちたい。",priority:"High",sp:2,ac:["全フィールドをインラインで編集可能","変更履歴に作成者とタイムスタンプを記録","変更時にウォッチャーへ通知する","未保存の変更がある場合は離脱確認を表示する"],notes:""},
+  {id:"US-018",epic:"イシュー管理",activity:"作業の追跡",step:"イシュー管理",title:"イシューのステータスを変更する",story:"開発者として、イシューのステータスを更新してボードに現在の進捗を反映させたい。",priority:"High",sp:2,ac:["ボード上のドラッグ＆ドロップまたはドロップダウンで変更","ワークフローで定義された遷移のみ許可する","ステータス変更時にウォッチャーへ通知する","各ステータス遷移にタイムスタンプを記録する"],notes:""},
+  {id:"US-019",epic:"イシュー管理",activity:"作業の追跡",step:"イシュー管理",title:"イシューを削除する",story:"プロジェクトマネージャーとして、誤って作成・重複したイシューを削除したい。",priority:"Medium",sp:1,ac:["削除前に確認ダイアログを表示する","ソフトデリート：30日以内は復元可能","親イシュー削除時にサブタスクも同時削除","監査ログにエントリを記録する"],notes:""},
+  {id:"US-020",epic:"イシュー管理",activity:"作業の追跡",step:"リンク＆コラボレーション",title:"イシューをリンクする",story:"開発者として、イシューをリンクして依存関係と関連性を可視化したい。",priority:"Medium",sp:3,ac:["リンクタイプ：ブロック・ブロックされる・関連・重複・クローン元","循環するブロックリンクは防止される","リンク先イシューにステータスバッジを表示する","リンク削除時にイシューは削除されない"],notes:""},
+  {id:"US-021",epic:"イシュー管理",activity:"作業の追跡",step:"リンク＆コラボレーション",title:"イシューにファイルを添付する",story:"ユーザーとして、イシューにファイルを添付して関連ドキュメントを一箇所にまとめたい。",priority:"Medium",sp:2,ac:["ドラッグ＆ドロップまたはファイル選択で添付","1ファイル最大25MB・1イシュー最大10ファイル","画像・PDFはプレビュー表示する","添付ファイルのダウンロード・削除が可能"],notes:""},
+  {id:"US-022",epic:"イシュー管理",activity:"作業の追跡",step:"リンク＆コラボレーション",title:"イシューにコメントを投稿する",story:"チームメンバーとして、イシューにコメントして作業に関する議論を記録したい。",priority:"High",sp:2,ac:["@メンション対応のリッチテキストエディター","@メンションされたユーザーへ通知する","コメントへの絵文字リアクション","自分のコメントを編集・削除可能","スレッド返信に対応"],notes:""},
+  {id:"US-023",epic:"イシュー管理",activity:"作業の追跡",step:"リンク＆コラボレーション",title:"イシューをウォッチする",story:"ステークホルダーとして、担当者にならずにイシューをウォッチして変更通知を受けたい。",priority:"Medium",sp:1,ac:["イシュー上のウォッチ/解除トグル","イシュー詳細にウォッチャー一覧を表示する","ステータス変更・コメント・見積もり変更時に通知する","通知設定から一括解除が可能"],notes:""},
+  {id:"US-024",epic:"イシュー管理",activity:"作業の追跡",step:"イシューの検索",title:"イシューを絞り込み・検索する",story:"ユーザーとして、イシューを検索・フィルターして関連する作業をすばやく見つけたい。",priority:"High",sp:5,ac:["タイトルと説明の全文検索","担当者・ステータス・ラベル・優先度・タイプ・スプリント・エピックでフィルター","フィルターの組み合わせ（AND条件）","フィルターを名前付きビューとして保存する","検索結果はリアルタイムで更新される"],notes:""},
+  {id:"US-025",epic:"イシュー管理",activity:"作業の追跡",step:"イシューの検索",title:"イシューを一括操作する",story:"プロジェクトマネージャーとして、複数のイシューを選択して一括操作し繰り返し作業を効率化したい。",priority:"Medium",sp:3,ac:["現在のビューで全選択/全解除","一括操作：担当・ステータス変更・ラベル追加・スプリント移動・削除","一括削除には確認が必要","操作完了後に操作サマリーを表示する"],notes:""},
+
+  {id:"US-026",epic:"見積もり",activity:"作業の見積もり",step:"見積もりの追加",title:"ストーリーポイントで見積もる",story:"開発者として、イシューにストーリーポイントを追加してチームに相対的な工数を示したい。",priority:"High",sp:2,ac:["フィボナッチ数ピッカー（1,2,3,5,8,13,21,34）","スプリントクローズ前はいつでも編集可能","ボードカードとバックログ行に見積もりを表示する","見積もり履歴に変更を記録する"],notes:""},
+  {id:"US-027",epic:"見積もり",activity:"作業の見積もり",step:"見積もりの追加",title:"時間で見積もる",story:"開発者として、時間単位で見積もりを入力してキャパシティプランニングを正確に行いたい。",priority:"High",sp:2,ac:["小数時間を入力可能（例：2.5時間）","残り時間＝見積もり－ログ済み時間で自動計算","スプリント追加時に見積もりがゼロの場合は警告を表示","任意の理由フィールド付きで変更を記録する"],notes:""},
+  {id:"US-028",epic:"見積もり",activity:"作業の見積もり",step:"AI見積もり",title:"AI見積もり提案を確認する",story:"開発者として、AIの見積もり提案を確認して適切な出発点を得たい。",priority:"High",sp:5,ac:["提案は範囲で表示（例：3〜5SP または 4〜8時間）","信頼度レベルを表示（低/中/高）","AI生成であることを明示する","ユーザーが明示的に承認・修正・却下する必要あり","解決済みイシュー50件以上で機能が有効化される"],notes:"モデルはイシュー保存時に実行—キーストロークごとではない。"},
+  {id:"US-029",epic:"見積もり",activity:"作業の見積もり",step:"AI見積もり",title:"AI提案を承認する",story:"開発者として、ワンクリックでAI見積もりを承認してリファインメント時間を節約したい。",priority:"High",sp:1,ac:["ワンクリックで「承認」するとAI提案の中央値を見積もりに設定","見積もり方法を「AI承認済み」として記録する","精度レポート用に元のAI値を保存する","承認後もユーザーが編集可能"],notes:""},
+  {id:"US-030",epic:"見積もり",activity:"作業の見積もり",step:"見積もりのレビュー",title:"見積もり履歴を確認する",story:"プロジェクトマネージャーとして、見積もり変更の履歴を確認してスコープの変遷を把握したい。",priority:"Medium",sp:2,ac:["イシュー詳細の履歴タブに表示する","表示内容：日付・作成者・変更前後の値・方法・理由","CSVとしてエクスポート可能","プロジェクトの全メンバーが閲覧可能"],notes:""},
+  {id:"US-031",epic:"見積もり",activity:"作業の見積もり",step:"コラボレーション見積もり",title:"プランニングポーカーを主催する",story:"スクラムマスターとして、プランニングポーカーを実施してチームがバイアスなく見積もれるようにしたい。",priority:"High",sp:8,ac:["バックログまたはスプリントからイシューを選択する","@メンションまたは共有リンクで参加者を招待する","ホストが投票を公開し、外れ値をハイライトする","ホストがコンセンサス見積もりを設定する","セッション履歴をイシューごとに保存する"],notes:"WebSocketによるリアルタイム同期。"},
+  {id:"US-032",epic:"見積もり",activity:"作業の見積もり",step:"コラボレーション見積もり",title:"プランニングポーカーで投票する",story:"開発者として、プランニングポーカーで非公開の見積もりを提出してアンカリングなしに見積もりたい。",priority:"High",sp:3,ac:["フィボナッチカードデッキを表示する","投票はホストが公開するまで非表示","公開前に投票を変更可能","投票人数のみ表示（投票内容は非表示）"],notes:""},
+  {id:"US-033",epic:"見積もり",activity:"作業の見積もり",step:"見積もりの追加",title:"Tシャツサイズで見積もる",story:"プロダクトマネージャーとして、エピックにTシャツサイズを使用して高レベルな見積もりを迅速に行いたい。",priority:"Medium",sp:3,ac:["サイズ：XS, S, M, L, XL, XXL","時間換算はプロジェクトごとに設定可能","エピックカードにTシャツサイズを表示する","サブイシューのSPと共存可能"],notes:""},
+  {id:"US-034",epic:"見積もり",activity:"作業の見積もり",step:"時間の記録",title:"イシューの作業時間を記録する",story:"開発者として、作業時間を記録して実際の工数を見積もりと並べて追跡したい。",priority:"High",sp:3,ac:["手動で時間と分を入力する","内蔵のスタート/ストップタイマー","時間記録時に残り見積もりを自動減算する","自分の記録エントリを編集・削除可能","イシュー詳細に時間ログを表示する"],notes:""},
+  {id:"US-035",epic:"見積もり",activity:"作業の見積もり",step:"時間の記録",title:"スプリント見積もりサマリーを確認する",story:"スクラムマスターとして、担当者ごとの見積もり対ログ時間のサマリーを確認して負荷を再調整したい。",priority:"High",sp:3,ac:["表：担当者・合計見積もり・合計ログ・残り時間","リアルタイムで更新される","過負荷の担当者をハイライトする（ログ > 見積もり）","スプリントプランニングパネルで利用可能"],notes:""},
+  {id:"US-036",epic:"見積もり",activity:"作業の見積もり",step:"見積もりのレビュー",title:"見積もり精度レポートを確認する",story:"プロジェクトマネージャーとして、見積もり精度を確認してチームが継続的に改善できるようにしたい。",priority:"Medium",sp:5,ac:["ユーザーとチームごとのMAPEを表示する","過大/過小見積もりのバイアスを表示する","直近8スプリントのトレンドを表示する","イシュータイプとラベルでフィルター可能","CSVとしてエクスポート可能"],notes:""},
+
+  {id:"US-037",epic:"バックログ",activity:"バックログ管理",step:"バックログ表示",title:"プロジェクトのバックログを確認する",story:"チームメンバーとして、スプリント未割当のイシューを一覧して未着手の作業を把握したい。",priority:"High",sp:2,ac:["デフォルトは優先度順でソート","見積もり済み・未見積もりのイシューを視覚的に区別する","ヘッダーに件数と合計SPを表示する","空の場合はイシュー作成のCTAを表示する"],notes:""},
+  {id:"US-038",epic:"バックログ",activity:"バックログ管理",step:"バックログの整理",title:"バックログをドラッグ＆ドロップで並び替える",story:"プロジェクトマネージャーとして、バックログを並び替えて優先度を位置で表現したい。",priority:"High",sp:3,ac:["各行にドラッグハンドルを配置する","並び順はセッションをまたいで保持される","複数選択での並び替えに対応する","変更はスプリントの順序に影響しない"],notes:""},
+  {id:"US-039",epic:"バックログ",activity:"バックログ管理",step:"バックログの整理",title:"バックログをフィルター・グループ化する",story:"ユーザーとして、バックログをフィルター・グループ化して関連イシューに集中したい。",priority:"Medium",sp:3,ac:["担当者・ラベル・タイプ・エピック・優先度・見積もり状態でフィルターする","エピックまたは担当者でグループ化する","フィルターはURLに保持されて共有可能","フィルターリセットボタンあり"],notes:""},
+  {id:"US-040",epic:"バックログ",activity:"バックログ管理",step:"バックログ健全性",title:"バックログ健全性スコアを確認する",story:"プロジェクトマネージャーとして、バックログの健全性スコアを確認してプランニングの準備状況を把握したい。",priority:"Low",sp:3,ac:["スコア0〜100%：見積もり率・説明率・受け入れ条件率の合計","各指標の内訳を表示する","プロジェクトダッシュボードにスコアを表示する","クリックで未完了アイテムのフィルタービューを開く"],notes:""},
+  {id:"US-041",epic:"バックログ",activity:"バックログ管理",step:"バックログ健全性",title:"バックログリファインメントモードを使う",story:"スクラムマスターとして、集中したリファインメントビューでチームが並行してイシューを整理できるようにしたい。",priority:"Medium",sp:3,ac:["スプリットビュー：左にイシュー一覧・右に詳細＋見積もり","キーボード（↑↓）でナビゲーションする","イシューごとのタイマー（任意・ホスト設定）","リファインメントごとのセッションメモフィールドを保存する"],notes:""},
+
+  {id:"US-042",epic:"スプリント計画",activity:"スプリントの運営",step:"スプリント作成",title:"スプリントを作成する",story:"スクラムマスターとして、スプリントを作成してチームに時間区切りのイテレーションを設けたい。",priority:"High",sp:2,ac:["スプリント名・開始日・終了日・目標は必須","期間を自動計算して表示する","アクティブなスプリントの日付と重複不可","「スプリント開始」クリックまでドラフト状態を維持する"],notes:""},
+  {id:"US-043",epic:"スプリント計画",activity:"スプリントの運営",step:"スプリント計画",title:"スプリントにイシューを追加する",story:"スクラムマスターとして、バックログからスプリントへイシューを移動してスコープを確定したい。",priority:"High",sp:2,ac:["バックログからドラッグまたは「スプリントへ移動」操作","キャパシティバーをリアルタイムで更新する","キャパシティ超過時に警告を表示する","イシューをバックログに戻すことも可能"],notes:""},
+  {id:"US-044",epic:"スプリント計画",activity:"スプリントの運営",step:"スプリント計画",title:"チームキャパシティを設定する",story:"スクラムマスターとして、スプリントごとの各メンバーの利用可能時間を設定して現実的な計画を立てたい。",priority:"High",sp:3,ac:["メンバーごとの時間入力とPTO/休日トグル","ワークスペースの作業時間設定からキャパシティを自動計算する","合計キャパシティとスプリント見積もり合計を比較表示する","キャパシティはスプリントごとに保存される"],notes:""},
+  {id:"US-045",epic:"スプリント計画",activity:"スプリントの運営",step:"スプリント実行",title:"スプリントを開始する",story:"スクラムマスターとして、スプリントを開始して作業を正式に始めたい。",priority:"High",sp:2,ac:["プロジェクトごとにアクティブなスプリントは1つのみ","開始によりステータスが「アクティブ」に変わる","アプリ内とメールでチームに通知する","スプリントボードがアクティブなビューになる"],notes:""},
+  {id:"US-046",epic:"スプリント計画",activity:"スプリントの運営",step:"スプリント実行",title:"スプリントを完了する",story:"スクラムマスターとして、スプリントを完了してイテレーションを閉じ未完了の作業を処理したい。",priority:"High",sp:3,ac:["完了・未完了のイシュー数サマリーを表示する","未完了イシュー：次のスプリントへ移動またはバックログへ返却","クローズ日付付きで「完了済み」にマークする","ベロシティを自動記録する"],notes:""},
+  {id:"US-047",epic:"スプリント計画",activity:"スプリントの運営",step:"スプリントの監視",title:"スプリントボードを確認する",story:"開発者として、スプリントボードを確認して進行中の作業と次に取り組む作業を把握したい。",priority:"High",sp:3,ac:["カンバンカラムはプロジェクトのワークフローに対応する","カードに担当者アバター・優先度バッジ・SPを表示する","カラム間のドラッグ＆ドロップでステータス変更する","担当者またはラベルでボードをフィルターする","ブロック中のイシューを視覚的にフラグ表示する"],notes:""},
+  {id:"US-048",epic:"スプリント計画",activity:"スプリントの運営",step:"スプリントの監視",title:"バーンダウンチャートを確認する",story:"スクラムマスターとして、バーンダウンチャートを確認してスプリントの進捗と理想ペースを比較したい。",priority:"High",sp:3,ac:["実績線と理想線を表示する","イシューがクローズされるとリアルタイムで更新される","ホバーで日付と残りSP/時間をツールチップ表示する","スコープ変更イベントをチャート上にマークする","PNGとしてエクスポート可能"],notes:""},
+
+  {id:"US-049",epic:"ダッシュボード＆レポート",activity:"インサイトの確認",step:"プロジェクトダッシュボード",title:"プロジェクトダッシュボードを確認する",story:"プロジェクトマネージャーとして、プロジェクトダッシュボードでプロジェクト全体の健全性を一目で把握したい。",priority:"High",sp:5,ac:["ウィジェット：ステータス別オープンイシュー・スプリント進捗・最近のアクティビティ・チームベロシティ","ウィジェットは並び替え可能","日付範囲フィルターが全ウィジェットに適用される","ダッシュボードリンクを共有可能（オブザーバーは読み取り専用）"],notes:""},
+  {id:"US-050",epic:"ダッシュボード＆レポート",activity:"インサイトの確認",step:"プロジェクトダッシュボード",title:"チームベロシティレポートを確認する",story:"スクラムマスターとして、時系列のベロシティを確認して将来のスプリントキャパシティを予測したい。",priority:"High",sp:3,ac:["棒グラフ：スプリントごとの完了SP","デフォルトで直近8スプリントを表示（設定変更可）","平均ベロシティのオーバーレイラインを表示する","PNG/CSVとしてエクスポート可能"],notes:""},
+  {id:"US-051",epic:"ダッシュボード＆レポート",activity:"インサイトの確認",step:"高度なレポート",title:"タイムトラッキングレポートを確認する",story:"プロジェクトマネージャーとして、ユーザーと期間別のログ時間を確認して工数を追跡したい。",priority:"Medium",sp:3,ac:["ユーザー・プロジェクト・イシュータイプ・日付範囲でフィルターする","日・週・月単位でグループ化する","合計とユーザーごとの小計を表示する","CSV/Excelとしてエクスポート可能"],notes:""},
+  {id:"US-052",epic:"ダッシュボード＆レポート",activity:"インサイトの確認",step:"高度なレポート",title:"サイクルタイムチャートを確認する",story:"チームリードとして、サイクルタイムとリードタイムを確認してイシュータイプ別の配信速度を把握したい。",priority:"Medium",sp:3,ac:["散布図：日付別のイシューごとのサイクルタイム","イシュータイプとラベルでフィルターする","中央値・P75・P95の参照線を表示する","PNGとしてエクスポート可能"],notes:""},
+  {id:"US-053",epic:"ダッシュボード＆レポート",activity:"インサイトの確認",step:"高度なレポート",title:"カスタムレポートを作成する",story:"マネージャーとして、カスタムレポートを作成してチーム固有の指標を追跡したい。",priority:"Low",sp:8,ac:["ドラッグ＆ドロップのフィルター・指標セレクター","プレビューはリアルタイムで更新される","名前を付けてレポートを保存する","メール配信をスケジュールする（毎日/毎週）","ワークスペースメンバーと共有可能"],notes:"フェーズ2の機能。"},
+
+  {id:"US-054",epic:"通知",activity:"情報の把握",step:"アプリ内通知",title:"アプリ内通知センターを使う",story:"ユーザーとして、通知を一箇所で確認して重要な更新を見逃さないようにしたい。",priority:"High",sp:3,ac:["未読数バッジ付きのベルアイコン","通知：担当・メンション・ステータス変更・見積もり変更","個別または全件の既読処理","通知タイプでフィルターする","通知クリックでイシューへ移動する"],notes:""},
+  {id:"US-055",epic:"通知",activity:"情報の把握",step:"メール通知",title:"メール通知設定を管理する",story:"ユーザーとして、メール送信イベントを制御して受信トレイを関連情報のみに保ちたい。",priority:"Medium",sp:2,ac:["イベントタイプごとのトグル","ダイジェストモード：通知を1日1件にまとめる","すべてのメールの配信停止リンクは即時有効","ワークスペースごとに設定可能"],notes:""},
+  {id:"US-056",epic:"通知",activity:"情報の把握",step:"メール通知",title:"Slack連携で通知を受ける",story:"チームとして、イシューの更新をSlackに通知してアプリを切り替えずにアクティビティを把握したい。",priority:"Medium",sp:5,ac:["OAuthでワークスペースのSlackを接続する","プロジェクトごとにチャンネルを選択する","どのイベントで投稿するかを選択する","イシューリンクと主要詳細をフォーマットして表示する"],notes:"MSTeamsはフェーズ3。"},
+
+  {id:"US-057",epic:"インテグレーション",activity:"ツールの連携",step:"VCS連携",title:"GitHubリポジトリを接続する",story:"開発者として、GitHubリポジトリをリンクしてコミットとPRが自動的にイシューを参照するようにしたい。",priority:"Medium",sp:5,ac:["ワークスペースごとにOAuth接続する","コミットメッセージのイシューIDで自動リンクする","リンク済みイシューにPRステータスバッジを表示する","プロジェクトごとに複数リポジトリをサポートする"],notes:"GitLab/Bitbucketも同じパターンで対応。"},
+  {id:"US-058",epic:"インテグレーション",activity:"ツールの連携",step:"データのインポート",title:"CSVからイシューをインポートする",story:"プロジェクトマネージャーとして、CSVファイルからイシューをインポートして既存データを素早く移行したい。",priority:"Medium",sp:5,ac:["テンプレートCSVをダウンロード可能","インポート前にフィールドマッピングUIを表示する","エラーレポート付きのドライランプレビュー","1回のインポートで最大500件","タイトルの類似性による重複検出"],notes:""},
+  {id:"US-059",epic:"インテグレーション",activity:"ツールの連携",step:"データのインポート",title:"JiraからインポートするS",story:"移行チームとして、JiraプロジェクトをインポートしてShistorical dataを失わずに移行したい。",priority:"Low",sp:8,ac:["Jira XMLエクスポートを受け入れる","Jiraのイシュータイプ・ステータス・優先度・スプリントをマッピングする","見積もりと時間ログを保持する","インポートレポートに成功/失敗を項目ごとに表示する"],notes:"フェーズ3。"},
+  {id:"US-060",epic:"インテグレーション",activity:"ツールの連携",step:"APIアクセス",title:"APIトークンを管理する",story:"開発者として、APIトークンを作成してProjectFlowをカスタムツールと連携したい。",priority:"Medium",sp:3,ac:["有効期限付きの名前付きトークンを生成する","トークンごとにスコープ付き権限を設定する","いつでもトークンを失効させることが可能","APIレート制限：1000リクエスト/時をレスポンスヘッダーに表示する"],notes:""},
+
+  {id:"US-061",epic:"管理",activity:"管理業務",step:"ガバナンス",title:"監査ログを確認する",story:"管理者として、監査ログを確認してワークスペースの重要な操作を追跡したい。",priority:"Medium",sp:3,ac:["ログ対象：ログイン・ロール変更・招待・削除・エクスポート・設定変更","ユーザー・操作タイプ・日付範囲でフィルターする","2年間保持される","CSVとしてエクスポート可能","読み取り専用；変更不可"],notes:""},
+  {id:"US-062",epic:"管理",activity:"管理業務",step:"請求管理",title:"請求とプランを管理する",story:"管理者として、サブスクリプションプランを管理して利用シート数に応じた費用を支払いたい。",priority:"Medium",sp:5,ac:["現在のプランとシート使用状況を表示する","プランのアップグレード/ダウングレードを行う","日割り計算でシートの追加/削除する","請求書をダウンロードする","Stripe経由のクレジットカード管理"],notes:""},
+  {id:"US-063",epic:"管理",activity:"管理業務",step:"データ管理",title:"データをエクスポートする",story:"管理者として、ワークスペースの全データをエクスポートして自社データを保持・移行できるようにしたい。",priority:"Medium",sp:3,ac:["全エクスポート：イシュー・コメント・時間ログ・添付ファイル・スプリント","JSONおよびCSV形式","エクスポートジョブは非同期処理；完了後にメール通知する","GDPR準拠；個人データを含む"],notes:""},
+];
+
+const ORIGINAL_STORIES = JSON.parse(JSON.stringify(STORIES_SEED));
+let STORIES = loadStories();
+let nextNumericId = computeNextId();
+
+function computeNextId() {
+  let max = 0;
+  for (const s of STORIES) {
+    const m = /US-(\d+)/.exec(s.id);
+    if (m) max = Math.max(max, parseInt(m[1], 10));
+  }
+  return max + 1;
+}
+
+function loadStories() {
+  try {
+    const saved = localStorage.getItem('projectflow_stories_ja');
+    if (saved) return JSON.parse(saved);
+  } catch (e) {}
+  return JSON.parse(JSON.stringify(ORIGINAL_STORIES));
+}
+
+function saveStories() {
+  try {
+    localStorage.setItem('projectflow_stories_ja', JSON.stringify(STORIES));
+  } catch (e) {}
+}
+
+function resetData() {
+  if (!confirm('すべてのストーリーを元のデータにリセットしますか？編集内容は失われます。')) return;
+  STORIES = JSON.parse(JSON.stringify(ORIGINAL_STORIES));
+  saveStories();
+  buildMap();
+}
+
+const EPIC_COLORS = {
+  "認証":                   { bg:"#2E75B6", light:"#E6F1FB" },
+  "ワークスペース＆設定":    { bg:"#3B6D11", light:"#EAF3DE" },
+  "プロジェクト管理":        { bg:"#854F0B", light:"#FAEEDA" },
+  "イシュー管理":            { bg:"#534AB7", light:"#EEEDFE" },
+  "見積もり":                { bg:"#A32D2D", light:"#FCEBEB" },
+  "バックログ":              { bg:"#0F6E56", light:"#E1F5EE" },
+  "スプリント計画":          { bg:"#993556", light:"#FBEAF0" },
+  "ダッシュボード＆レポート":{ bg:"#4A7C4E", light:"#EAF3DE" },
+  "通知":                    { bg:"#854F0B", light:"#FAEEDA" },
+  "インテグレーション":      { bg:"#2E75B6", light:"#E6F1FB" },
+  "管理":                    { bg:"#5F5E5A", light:"#F1EFE8" },
+};
+
+const PRIORITY_JA = { "High":"高", "Medium":"中", "Low":"低" };
+
+function buildStructure() {
+  const baseOrder = ["認証","ワークスペース＆設定","プロジェクト管理","イシュー管理","見積もり","バックログ","スプリント計画","ダッシュボード＆レポート","通知","インテグレーション","管理"];
+  const seen = new Set(baseOrder);
+  const epicOrder = [...baseOrder];
+  for (const s of STORIES) {
+    if (!seen.has(s.epic)) { seen.add(s.epic); epicOrder.push(s.epic); }
+  }
+  const fallbackPalette = ["#2E75B6","#3B6D11","#854F0B","#534AB7","#A32D2D","#0F6E56","#993556","#4A7C4E","#5F5E5A"];
+  let fallbackIdx = 0;
+
+  const structure = [];
+  for (const epic of epicOrder) {
+    const epicStories = STORIES.filter(s => s.epic === epic);
+    if (!epicStories.length) continue;
+    if (!EPIC_COLORS[epic]) {
+      const bg = fallbackPalette[fallbackIdx++ % fallbackPalette.length];
+      EPIC_COLORS[epic] = { bg, light: "#F0EFEA" };
+    }
+    const activities = [...new Set(epicStories.map(s => s.activity))];
+    for (const activity of activities) {
+      const actStories = epicStories.filter(s => s.activity === activity);
+      const steps = [...new Set(actStories.map(s => s.step))];
+      const stepMap = {};
+      for (const step of steps) stepMap[step] = actStories.filter(s => s.step === step);
+      structure.push({ epic, activity, steps, stepMap, color: EPIC_COLORS[epic] });
+    }
+  }
+  return structure;
+}
+
+function buildMap() {
+  const structure = buildStructure();
+  const table = document.getElementById('map');
+
+  let epicHeaderRow = '<tr class="epic-header-row"><td class="row-label-cell"></td>';
+  for (const col of structure) {
+    const eKey = encodeCardKey(col.epic);
+    epicHeaderRow += `<td colspan="1" style="padding:0 8px 10px 0"><div class="epic-header editable-card" title="クリックで編集" style="background:${col.color.bg}" onclick="startInlineEdit(this,'epic','${eKey}')">${escapeHtml(col.epic)}<span class="edit-hint">✎</span></div></td>`;
+  }
+  epicHeaderRow += '</tr>';
+
+  let actRow = '<tr class="activity-row"><td class="row-label-cell" style="padding-top:6px"><div class="row-label">1. アクティビティ</div><div class="row-sublabel">ユーザーがプロダクト上で行う高レベルなタスク</div></td>';
+  for (const col of structure) {
+    const eKey = encodeCardKey(col.epic);
+    const aKey = encodeCardKey(col.activity);
+    actRow += `<td style="padding:0 8px 10px 0;vertical-align:top"><div class="activity-card editable-card" title="クリックで編集" style="background:${col.color.light};border-color:${col.color.bg}" onclick="startInlineEdit(this,'activity','${eKey}','${aKey}')">${escapeHtml(col.activity)}<span class="edit-hint">✎</span></div></td>`;
+  }
+  actRow += '</tr>';
+
+  let stepRow = '<tr class="step-row"><td class="row-label-cell" style="padding-top:6px"><div class="row-label">2. ステップ</div><div class="row-sublabel">アクティビティを完了するために経るステップ</div></td>';
+  for (const col of structure) {
+    const eKey = encodeCardKey(col.epic);
+    const aKey = encodeCardKey(col.activity);
+    stepRow += `<td style="padding:0 8px 12px 0;vertical-align:top">`;
+    for (const step of col.steps) {
+      const sKey = encodeCardKey(step);
+      stepRow += `<div class="step-card editable-card" title="クリックで編集" style="background:#7EC893;border-color:#3B7A52" onclick="startInlineEdit(this,'step','${eKey}','${aKey}','${sKey}')">${escapeHtml(step)}<span class="edit-hint">✎</span></div>`;
+    }
+    stepRow += '</td>';
+  }
+  stepRow += '</tr>';
+
+  let dividerRow = '<tr class="divider-row"><td></td>';
+  for (const col of structure) dividerRow += '<td><div class="divider-line"></div></td>';
+  dividerRow += '</tr>';
+
+  let detailRows = '<tr class="detail-row"><td class="row-label-cell" style="padding-top:4px"><div class="row-label">3. 詳細</div><div class="row-sublabel">各ステップの粒度の細かいユーザーストーリー</div></td>';
+  for (const col of structure) {
+    detailRows += `<td class="detail-cell" style="vertical-align:top;padding:0 8px 0 0">`;
+    for (const step of col.steps) {
+      for (const s of col.stepMap[step]) {
+        const pc = s.priority.toLowerCase();
+        detailRows += `<div class="story-note ${pc}" onclick="openModal('${s.id}')">
+          <div class="story-id">${s.id}</div>
+          <div class="story-title">${escapeHtml(s.title)}</div>
+          <span class="story-sp">${s.sp} SP</span>
+        </div>`;
+      }
+    }
+    detailRows += `</td>`;
+  }
+  detailRows += '</tr>';
+
+  table.innerHTML = epicHeaderRow + actRow + stepRow + dividerRow + detailRows;
+
+  const epicCount = new Set(STORIES.map(s => s.epic)).size;
+  document.getElementById('story-count').textContent = `${STORIES.length}ストーリー · ${epicCount}エピック`;
+}
+
+function openModal(id) {
+  const s = STORIES.find(x => x.id === id);
+  if (!s) return;
+  renderViewModal(s);
+  document.getElementById('modal').classList.add('open');
+}
+
+function renderViewModal(s) {
+  const color = EPIC_COLORS[s.epic];
+  const pc = s.priority.toLowerCase();
+  const priaJa = PRIORITY_JA[s.priority] || s.priority;
+  document.getElementById('modal-inner').innerHTML = `
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-epic" style="color:${color.bg}">${escapeHtml(s.epic)}</div>
+    <div class="modal-id">${s.id}</div>
+    <h2>${escapeHtml(s.title)}</h2>
+    <div class="modal-badges">
+      <span class="badge ${pc}">優先度：${priaJa}</span>
+      <span class="badge sp">${s.sp} ストーリーポイント</span>
+    </div>
+    <div class="modal-label">ユーザーストーリー</div>
+    <div class="modal-story">「${escapeHtml(s.story)}」</div>
+    <div class="modal-label">受け入れ条件</div>
+    <ul class="ac-list">${s.ac.map(a => `<li>${escapeHtml(a)}</li>`).join('')}</ul>
+    ${s.notes ? `<div class="modal-label">備考</div><div class="modal-notes">${escapeHtml(s.notes)}</div>` : ''}
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="openEditModal('${s.id}')">編集</button>
+      <button class="btn-danger" onclick="deleteStory('${s.id}')">削除</button>
+    </div>
+  `;
+}
+
+function epicOptionsHtml(selectedEpic) {
+  const epics = [...new Set(STORIES.map(s => s.epic))];
+  return epics.map(e => `<option value="${escapeHtml(e)}" ${e === selectedEpic ? 'selected' : ''}>${escapeHtml(e)}</option>`).join('');
+}
+
+function openEditModal(id) {
+  const s = STORIES.find(x => x.id === id);
+  if (!s) return;
+  renderEditForm(s, false);
+  document.getElementById('modal').classList.add('open');
+}
+
+function openAddModal() {
+  const blank = { id: null, epic: STORIES[0] ? STORIES[0].epic : '', activity: '', step: '', title: '', story: '', priority: 'Medium', sp: 2, ac: [''], notes: '' };
+  renderEditForm(blank, true);
+  document.getElementById('modal').classList.add('open');
+}
+
+function renderEditForm(s, isNew) {
+  const acRows = (s.ac.length ? s.ac : ['']).map((a, i) => `
+    <div class="ac-edit-row">
+      <input class="field-input" type="text" data-ac-index="${i}" value="${escapeHtml(a)}" placeholder="受け入れ条件">
+      <button type="button" class="ac-remove-btn" onclick="removeAcRow(this)">✕</button>
+    </div>`).join('');
+
+  document.getElementById('modal-inner').innerHTML = `
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h2>${isNew ? 'ストーリーを追加' : 'ストーリーを編集'}</h2>
+
+    <div class="field-label">エピック</div>
+    <input class="field-input" id="f-epic" type="text" list="epic-list" value="${escapeHtml(s.epic)}" placeholder="例：認証">
+    <datalist id="epic-list">${epicOptionsHtml(s.epic)}</datalist>
+
+    <div class="field-row" style="margin-top:10px">
+      <div>
+        <div class="field-label">アクティビティ</div>
+        <input class="field-input" id="f-activity" type="text" value="${escapeHtml(s.activity)}" placeholder="例：アカウントアクセス">
+      </div>
+      <div>
+        <div class="field-label">ステップ</div>
+        <input class="field-input" id="f-step" type="text" value="${escapeHtml(s.step)}" placeholder="例：ログイン">
+      </div>
+    </div>
+
+    <div class="field-label">タイトル</div>
+    <input class="field-input" id="f-title" type="text" value="${escapeHtml(s.title)}" placeholder="ストーリーの短いタイトル">
+
+    <div class="field-label">ユーザーストーリー</div>
+    <textarea class="field-input field-textarea" id="f-story" placeholder="〜として、〜したい">${escapeHtml(s.story)}</textarea>
+
+    <div class="field-row" style="margin-top:10px">
+      <div>
+        <div class="field-label">優先度</div>
+        <select class="field-select" id="f-priority">
+          ${['High','Medium','Low'].map(p => `<option value="${p}" ${p === s.priority ? 'selected' : ''}>${PRIORITY_JA[p]}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <div class="field-label">ストーリーポイント</div>
+        <input class="field-input" id="f-sp" type="number" min="0" step="1" value="${s.sp}">
+      </div>
+    </div>
+
+    <div class="field-label">受け入れ条件</div>
+    <div id="ac-rows">${acRows}</div>
+    <button type="button" class="ac-add-btn" onclick="addAcRow()">＋ 条件を追加</button>
+
+    <div class="field-label">備考</div>
+    <textarea class="field-input field-textarea" id="f-notes" placeholder="任意の備考">${escapeHtml(s.notes || '')}</textarea>
+
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="saveStoryForm(${isNew ? 'null' : `'${s.id}'`})">保存</button>
+      <button class="btn-secondary" onclick="${isNew ? 'closeModal()' : `renderViewModal(STORIES.find(x=>x.id==='${s.id}')); `}">キャンセル</button>
+    </div>
+  `;
+}
+
+function addAcRow() {
+  const container = document.getElementById('ac-rows');
+  const idx = container.children.length;
+  const div = document.createElement('div');
+  div.className = 'ac-edit-row';
+  div.innerHTML = `<input class="field-input" type="text" data-ac-index="${idx}" placeholder="受け入れ条件"><button type="button" class="ac-remove-btn" onclick="removeAcRow(this)">✕</button>`;
+  container.appendChild(div);
+}
+
+function removeAcRow(btn) {
+  btn.parentElement.remove();
+}
+
+function saveStoryForm(id) {
+  const epic = document.getElementById('f-epic').value.trim();
+  const activity = document.getElementById('f-activity').value.trim();
+  const step = document.getElementById('f-step').value.trim();
+  const title = document.getElementById('f-title').value.trim();
+  const story = document.getElementById('f-story').value.trim();
+  const priority = document.getElementById('f-priority').value;
+  const sp = parseInt(document.getElementById('f-sp').value, 10) || 0;
+  const notes = document.getElementById('f-notes').value.trim();
+  const ac = Array.from(document.querySelectorAll('#ac-rows input')).map(i => i.value.trim()).filter(Boolean);
+
+  if (!epic || !activity || !step || !title) {
+    alert('エピック・アクティビティ・ステップ・タイトルは必須です。');
+    return;
+  }
+
+  if (id) {
+    const s = STORIES.find(x => x.id === id);
+    Object.assign(s, { epic, activity, step, title, story, priority, sp, notes, ac });
+  } else {
+    const newId = `US-${String(nextNumericId++).padStart(3, '0')}`;
+    STORIES.push({ id: newId, epic, activity, step, title, story, priority, sp, notes, ac });
+  }
+  saveStories();
+  buildMap();
+  closeModal();
+}
+
+function deleteStory(id) {
+  if (!confirm('このストーリーを削除しますか？（リセットしない限り元に戻せません）')) return;
+  STORIES = STORIES.filter(x => x.id !== id);
+  saveStories();
+  buildMap();
+  closeModal();
+}
+
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Encode/decode card identifiers safely for use in HTML attributes
+function encodeCardKey(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+function decodeCardKey(key) {
+  return decodeURIComponent(escape(atob(key)));
+}
+
+function startInlineEdit(card, type, epicKey, activityKey, stepKey) {
+  if (card.querySelector('input')) return;
+
+  const epic = decodeCardKey(epicKey);
+  const activity = activityKey ? decodeCardKey(activityKey) : null;
+  const step = stepKey ? decodeCardKey(stepKey) : null;
+  const currentValue = type === 'epic' ? epic : (type === 'activity' ? activity : step);
+
+  const input = document.createElement('input');
+  input.className = 'inline-edit-input';
+  input.value = currentValue;
+  card.innerHTML = '';
+  card.appendChild(input);
+  input.focus();
+  input.select();
+
+  function commit() {
+    const newValue = input.value.trim();
+    if (newValue && newValue !== currentValue) {
+      if (type === 'epic') {
+        STORIES.forEach(s => { if (s.epic === epic) s.epic = newValue; });
+        if (EPIC_COLORS[epic] && !EPIC_COLORS[newValue]) {
+          EPIC_COLORS[newValue] = EPIC_COLORS[epic];
+        }
+      } else if (type === 'activity') {
+        STORIES.forEach(s => { if (s.epic === epic && s.activity === activity) s.activity = newValue; });
+      } else {
+        STORIES.forEach(s => { if (s.epic === epic && s.activity === activity && s.step === step) s.step = newValue; });
+      }
+      saveStories();
+    }
+    buildMap();
+  }
+
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { input.removeEventListener('blur', commit); buildMap(); }
+  });
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal')) {
+    document.getElementById('modal').classList.remove('open');
+  }
+}
+
+buildMap();
+
+// URLの#US-001のようなハッシュを読み取り、該当ストーリーのモーダルを自動で開く
+function openStoryFromHash() {
+  const id = window.location.hash.replace('#', '').trim();
+  if (id && STORIES.some(s => s.id === id)) {
+    openModal(id);
+  }
+}
+window.addEventListener('DOMContentLoaded', openStoryFromHash);
+window.addEventListener('hashchange', openStoryFromHash);
+openStoryFromHash();
+</script>
+</body>
+</html>
