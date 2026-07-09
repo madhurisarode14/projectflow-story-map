@@ -647,6 +647,17 @@ function closeModal(e) {
 }
 
 buildMap();
+
+// URLの#US-001のようなハッシュを読み取り、該当ストーリーのモーダルを自動で開く
+function openStoryFromHash() {
+  const id = window.location.hash.replace('#', '').trim();
+  if (id && STORIES.some(s => s.id === id)) {
+    openModal(id);
+  }
+}
+window.addEventListener('DOMContentLoaded', openStoryFromHash);
+window.addEventListener('hashchange', openStoryFromHash);
+openStoryFromHash();
 </script>
 </body>
 </html>
